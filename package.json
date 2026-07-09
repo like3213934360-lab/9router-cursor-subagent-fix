@@ -1,0 +1,27 @@
+{
+  "name": "9router-cursor-subagent-fix",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Hotfix for 9router Cursor Subagent failure: cloud_base_branch empty string on local environment (decolua/9router#2446)",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/test-sanitize-cloud-base-branch.mjs",
+    "patch": "node patches/patch-cloud-base-branch.mjs",
+    "patch:local": "node patches/patch-cloud-base-branch.mjs /opt/homebrew/lib/node_modules/9router"
+  },
+  "keywords": [
+    "9router",
+    "cursor",
+    "codex",
+    "subagent",
+    "cloud_base_branch",
+    "hotfix"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/like3213934360-lab/9router-cursor-subagent-fix.git"
+  },
+  "bugs": {
+    "url": "https://github.com/decolua/9router/issues/2446"
+  }
+}
