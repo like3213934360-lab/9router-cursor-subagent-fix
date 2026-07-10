@@ -1,5 +1,7 @@
 # 9router Cursor Subagent Fix
 
+Merged onto upstream **9router `0.5.30`** `open-sse` sources.
+
 Hotfix for [decolua/9router#2446](https://github.com/decolua/9router/issues/2446):
 
 > Cursor local Subagent fails with:
@@ -20,7 +22,7 @@ When Cursor talks to Codex through 9router:
 1. **Source-level patch** for `open-sse`:
    - `open-sse/translator/response/openai-responses.js`
    - `open-sse/utils/stream.js`
-2. **Installed-package hotfix script** for 9router `0.5.x`:
+2. **Installed-package hotfix script** for 9router `0.5.20`–`0.5.30`:
    - `patches/patch-cloud-base-branch.mjs`
 3. **Unit test** for the sanitizer:
    - `tests/test-sanitize-cloud-base-branch.mjs`
