@@ -12,6 +12,9 @@ concurrency:
   group: gitbook-pages
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
@@ -32,17 +35,16 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
 
       - name: Add .nojekyll
         run: touch out/.nojekyll
 
-      - name: Deploy to 9router.github.io
+      - name: Deploy to this repository's GitHub Pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
-          external_repository: 9router/9router.github.io
-          publish_branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: gitbook/out
           force_orphan: true
           user_name: github-actions[bot]
