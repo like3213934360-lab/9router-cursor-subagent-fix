@@ -10,14 +10,12 @@ import { fallbackToolCallId } from "../concerns/toolCall.js";
 import { reasoningDelta, extractReasoningText } from "../concerns/reasoning.js";
 import { ROLE, OPENAI_BLOCK, RESPONSES_ITEM, OPENAI_FINISH, MODEL_FALLBACK } from "../schema/index.js";
 
-
 /**
  * Build a map of optional tool fields from the original client request body.
- * Used to strip Codex strict-mode empty placeholders before returning to Cursor.
- * @param {object|null|undefined} body
- * @returns {Map<string, Set<string>>}
+ * Codex strict mode can otherwise turn these fields into required empty
+ * placeholders that downstream clients treat as explicitly supplied values.
  */
-function buildOptionalToolFieldMap(body) {
+export function buildOptionalToolFieldMap(body) {
   const map = new Map();
   const tools = body?.tools;
   if (!Array.isArray(tools)) return map;
@@ -29,23 +27,22 @@ function buildOptionalToolFieldMap(body) {
     const properties = schema?.properties || {};
     const required = new Set(Array.isArray(schema?.required) ? schema.required : []);
     const optionalFields = new Set();
+
     for (const field of Object.keys(properties)) {
       if (!required.has(field)) optionalFields.add(field);
     }
     if (name) map.set(name, optionalFields);
   }
+
   return map;
 }
 
 /**
- * Remove empty optional tool arguments that Codex emits after strictifying schemas.
- * Also applies a Cursor Subagent-specific guard for local cloud_base_branch.
- * @param {string} toolName
- * @param {string} argsText
- * @param {Map<string, Set<string>>|null|undefined} optionalToolFields
- * @returns {string}
+ * Remove empty optional arguments introduced by strict schema conversion.
+ * In particular, Cursor rejects cloud_base_branch for local subagents even
+ * when its value is only an empty placeholder.
  */
-function sanitizeToolArguments(toolName, argsText, optionalToolFields) {
+export function sanitizeToolArguments(toolName, argsText, optionalToolFields) {
   let args;
   try {
     args = JSON.parse(argsText);
@@ -66,14 +63,12 @@ function sanitizeToolArguments(toolName, argsText, optionalToolFields) {
     }
   }
 
-  // Cursor Subagent: empty cloud_base_branch is invalid for local environment.
   if (args.environment === "local" && args.cloud_base_branch === "") {
     delete args.cloud_base_branch;
   }
 
   return JSON.stringify(args);
 }
-
 
 /**
  * Translate OpenAI chunk to Responses API events
@@ -515,9 +510,8 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     );
   }
 
-  // Buffer function-call argument deltas; emit sanitized args on item done.
-  // Codex Responses may strictify optional fields and force empty placeholders
-  // (e.g. cloud_base_branch:""), which Cursor rejects for local subagents.
+  // Buffer argument deltas so empty strict-mode placeholders can be removed
+  // without emitting invalid partial JSON to the downstream client.
   if (eventType === "response.function_call_arguments.delta" || eventType === "response.custom_tool_call_input.delta") {
     const argsDelta = data.delta || "";
     if (!argsDelta) return null;
@@ -530,14 +524,14 @@ export function openaiResponsesToOpenAIResponse(chunk, state) {
     const rawArgs = state.currentToolCallArgs || data.item?.arguments || data.item?.input || "{}";
     const toolName = state.currentToolCallName || data.item?.name || "";
     const sanitizedArgs = sanitizeToolArguments(toolName, rawArgs, state.optionalToolFields);
-    const chunkOut = buildChunk(
+    const result = buildChunk(
       { id: state.chatId, created: state.created, model: state.model || MODEL_FALLBACK },
       { tool_calls: [{ index: state.toolCallIndex, function: { arguments: sanitizedArgs } }] }
     );
     state.toolCallIndex++;
     state.currentToolCallArgs = "";
     state.currentToolCallName = "";
-    return chunkOut;
+    return result;
   }
 
   // Response completed

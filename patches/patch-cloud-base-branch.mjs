@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Hotfix for 9router 0.5.x installed package:
+ * Legacy hotfix for installed 9router 0.5.20-0.5.30 packages.
+ * The v0.5.35 source tree in this fork already contains the fix directly.
+ *
  * Codex Responses strictifies optional tool fields (e.g. cloud_base_branch:""),
  * and the Responses→OpenAI translator previously streamed those args through.
  * This patch buffers args and strips empty optional placeholders before Cursor sees them.
