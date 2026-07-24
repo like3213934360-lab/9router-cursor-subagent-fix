@@ -1,7 +1,109 @@
-> **Fork note:** This branch tracks official 9Router **v0.5.40** and retains the
-> [Cursor local Subagent fix](https://github.com/decolua/9router/issues/2446):
-> empty strict-mode tool placeholders such as `cloud_base_branch: ""` are removed
-> before local Subagent arguments are returned to Cursor.
+# 9Router Cursor Subagent Fix (v0.5.40)
+
+> Hotfix fork of [decolua/9router](https://github.com/decolua/9router) for [issue #2446](https://github.com/decolua/9router/issues/2446).
+>
+> **What it fixes:** when Cursor launches a **local Subagent** through 9Router, Codex/Responses may emit `"cloud_base_branch": ""`. Cursor then rejects the tool call with:
+> `cloud_base_branch may only be specified when environment equals cloud`
+>
+> This fork strips those empty strict-mode placeholders **before** arguments are returned to Cursor, so local multi-subagents can start normally.
+
+中文说明见 [README.zh-CN.md](./README.zh-CN.md)。
+
+---
+
+## How to use this fixed 9Router
+
+### Option A — Run from this repository (recommended)
+
+```bash
+git clone https://github.com/like3213934360-lab/9router-cursor-subagent-fix.git
+cd 9router-cursor-subagent-fix
+cp .env.example .env
+npm install
+npm run build
+PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run start
+```
+
+Dev mode (hot reload):
+
+```bash
+PORT=20128 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run dev
+```
+
+Open the dashboard: `http://localhost:20128`
+
+### Option B — Docker (build this fork)
+
+```bash
+git clone https://github.com/like3213934360-lab/9router-cursor-subagent-fix.git
+cd 9router-cursor-subagent-fix
+docker build -t 9router-cursor-fix .
+docker run -d --name 9router-cursor-fix \
+  -p 20128:20128 \
+  -v "$HOME/.9router:/app/data" \
+  -e DATA_DIR=/app/data \
+  9router-cursor-fix
+```
+
+> Do **not** use `decolua/9router:latest` if you need this fix — the official image does not include it yet.
+
+### Option C — Patch an already-installed npm `9router` (legacy)
+
+Only for older installed packages (`0.5.20`–`0.5.30`) where source is not available:
+
+```bash
+# default Homebrew global path on Apple Silicon
+node patches/patch-cloud-base-branch.mjs
+
+# or pass your install path
+node patches/patch-cloud-base-branch.mjs /path/to/node_modules/9router
+```
+
+Then restart 9Router. Prefer Option A/B on **v0.5.40** — the fix is already in this repo’s source.
+
+---
+
+## Connect Cursor to this 9Router
+
+1. In this 9Router dashboard: copy your API Key, connect providers / create a combo as usual.
+2. In Cursor → **Settings → Models → API Keys / OpenAI Compatible** (wording varies by Cursor version):
+   - **OpenAI API Base URL:** `http://localhost:20128/v1`
+   - **OpenAI API Key:** the key from the 9Router dashboard
+   - **Model:** e.g. `cx/gpt-5.5` or your combo name
+3. Start an Agent chat and ask it to launch **local** Subagents (Explore / generalPurpose, etc.).
+4. Confirm Subagents start without:
+   `cloud_base_branch may only be specified when environment equals cloud`
+
+### Quick self-check
+
+```bash
+node tests/test-sanitize-cloud-base-branch.mjs
+```
+
+All checks should `PASS`, including `drops cloud_base_branch`.
+
+---
+
+## What’s included
+
+| Item | Status |
+|------|--------|
+| Base | Official **9Router v0.5.40** |
+| Fix | Responses→OpenAI argument sanitizer (`cloud_base_branch` + empty optional fields) |
+| Test | `tests/test-sanitize-cloud-base-branch.mjs` |
+| Legacy patch | `patches/patch-cloud-base-branch.mjs` |
+
+---
+
+## Upstream / credits
+
+- Upstream project: [decolua/9router](https://github.com/decolua/9router)
+- Bug report: [#2446](https://github.com/decolua/9router/issues/2446)
+- This fork only adds the Cursor Subagent sanitizer on top of the official release.
+
+Below is the original upstream README for full 9Router features.
+
+---
 
 <div align="center">
   <img src="./images/9router.png?1" alt="9Router Dashboard" width="800"/>

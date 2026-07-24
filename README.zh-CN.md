@@ -1,5 +1,109 @@
-> **Fork 说明：** 本分支基于官方 9Router **v0.5.40**，并保留 Cursor 本地 Subagent 修复（[decolua/9router#2446](https://github.com/decolua/9router/issues/2446)）：在返回给 Cursor 前移除 `cloud_base_branch: ""` 等 strict 模式空占位参数。
+# 9Router Cursor 多子代理修复版（v0.5.40）
 
+> 基于官方 [decolua/9router](https://github.com/decolua/9router) **v0.5.40**，并保留 Cursor 本地 Subagent 修复（[#2446](https://github.com/decolua/9router/issues/2446)）。
+>
+> **修了什么：** 经 9Router 走 Cursor 本地多子代理时，上游可能带上空字符串 `"cloud_base_branch": ""`，Cursor 会直接拒绝启动：
+> `cloud_base_branch may only be specified when environment equals cloud`
+>
+> 本仓库在返回给 Cursor 之前去掉这些 strict 模式空占位字段，本地多子代理可以正常启动。
+
+English guide: [README.md](./README.md).
+
+---
+
+## 怎么使用这个修复版 9Router
+
+### 方式 A — 从本仓库源码运行（推荐）
+
+```bash
+git clone https://github.com/like3213934360-lab/9router-cursor-subagent-fix.git
+cd 9router-cursor-subagent-fix
+cp .env.example .env
+npm install
+npm run build
+PORT=20128 HOSTNAME=0.0.0.0 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run start
+```
+
+开发模式：
+
+```bash
+PORT=20128 NEXT_PUBLIC_BASE_URL=http://localhost:20128 npm run dev
+```
+
+浏览器打开控制台：`http://localhost:20128`
+
+### 方式 B — Docker 构建本 fork
+
+```bash
+git clone https://github.com/like3213934360-lab/9router-cursor-subagent-fix.git
+cd 9router-cursor-subagent-fix
+docker build -t 9router-cursor-fix .
+docker run -d --name 9router-cursor-fix \
+  -p 20128:20128 \
+  -v "$HOME/.9router:/app/data" \
+  -e DATA_DIR=/app/data \
+  9router-cursor-fix
+```
+
+> 需要本修复时，**不要**直接用官方镜像 `decolua/9router:latest`（官方尚未合入该 fix）。
+
+### 方式 C — 给已安装的 npm `9router` 打补丁（旧版）
+
+仅适用于本机已装的旧包（约 `0.5.20`–`0.5.30`）：
+
+```bash
+# Apple Silicon Homebrew 全局路径默认即可
+node patches/patch-cloud-base-branch.mjs
+
+# 或指定安装目录
+node patches/patch-cloud-base-branch.mjs /path/to/node_modules/9router
+```
+
+打完后重启 9Router。用 **v0.5.40** 请优先选方式 A/B——源码里已经带上修复。
+
+---
+
+## 把 Cursor 接到这个 9Router
+
+1. 打开本机 9Router 控制台，复制 API Key，按需连接 Provider / 建 Combo。
+2. Cursor → **Settings → Models**（自定义 OpenAI Compatible / Override）：
+   - **Base URL：** `http://localhost:20128/v1`
+   - **API Key：** 填 9Router 控制台里的 Key
+   - **Model：** 例如 `cx/gpt-5.5` 或你的 Combo 名
+3. 开一个 Agent 对话，让它启动**本地** Subagent（Explore / generalPurpose 等）。
+4. 确认不再出现：
+   `cloud_base_branch may only be specified when environment equals cloud`
+
+### 自检
+
+```bash
+node tests/test-sanitize-cloud-base-branch.mjs
+```
+
+应全部 `PASS`，其中包含 `drops cloud_base_branch`。
+
+---
+
+## 本仓库包含什么
+
+| 项目 | 说明 |
+|------|------|
+| 基线 | 官方 **9Router v0.5.40** |
+| 修复 | Responses→OpenAI 参数清洗（去掉 `cloud_base_branch: ""` 等空可选字段） |
+| 测试 | `tests/test-sanitize-cloud-base-branch.mjs` |
+| 旧版补丁 | `patches/patch-cloud-base-branch.mjs` |
+
+---
+
+## 上游
+
+- 官方项目：[decolua/9router](https://github.com/decolua/9router)
+- 问题跟踪：[#2446](https://github.com/decolua/9router/issues/2446)
+- 本 fork 仅在官方版本上叠加 Cursor Subagent 修复。
+
+以下为官方 README 全文（功能说明、Provider、部署等）。
+
+---
 
 <div align="center">
   <img src="./images/9router.png?1" alt="9Router Dashboard" width="800"/>
