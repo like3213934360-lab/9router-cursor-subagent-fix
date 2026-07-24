@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Legacy hotfix for installed 9router 0.5.20-0.5.30 packages.
- * The v0.5.35 source tree in this fork already contains the fix directly.
+ * The v0.5.40 source tree in this fork already contains the fix directly.
  *
  * Codex Responses strictifies optional tool fields (e.g. cloud_base_branch:""),
  * and the Responses→OpenAI translator previously streamed those args through.

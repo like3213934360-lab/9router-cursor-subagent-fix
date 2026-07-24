@@ -1,18 +1,15 @@
 import { DEFAULT_LANG } from "@/constants/languages";
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const defaultLanguagePath = `${basePath}/${DEFAULT_LANG}/`;
-
 // Static-friendly redirect to default language (meta refresh + client script)
 export const metadata = {
   title: "Redirecting...",
   other: {
-    "http-equiv:refresh": `0; url=${defaultLanguagePath}`
+    "http-equiv:refresh": `0; url=/${DEFAULT_LANG}/`
   }
 };
 
 export default function HomePage() {
-  const target = defaultLanguagePath;
+  const target = `/${DEFAULT_LANG}/`;
   return (
     <>
       <script
